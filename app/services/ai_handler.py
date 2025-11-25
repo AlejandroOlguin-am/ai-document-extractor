@@ -140,8 +140,6 @@ def analyze_document_content(content: str, filename: str, is_image_mode: bool = 
         
         raw_json = response.choices[0].message.content
         print(" -> Respuesta cruda de la IA recibida.")
-        print( raw_json)
-        print(" -> Validando y parseando el JSON con Pydantic...")
 
         data = json.loads(raw_json)
 
