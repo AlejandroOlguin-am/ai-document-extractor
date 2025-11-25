@@ -9,3 +9,6 @@ __pycache__/
 
 # Local environment variables
 .env
+
+# run files
+run_local.py

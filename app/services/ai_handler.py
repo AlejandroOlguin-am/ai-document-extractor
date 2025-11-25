@@ -5,9 +5,8 @@ from openai import OpenAI
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.models.schemas import RespuestaAnalisis # Importamos la salida definida
+from app.models.schemas import RespuestaAnalisis 
 
-# Inicializar cliente de OpenAI (usa la clave cargada)
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 def analyze_document_content(content: str, filename: str, is_image_mode: bool = False) -> dict:
@@ -20,7 +19,6 @@ def analyze_document_content(content: str, filename: str, is_image_mode: bool = 
 
     schema_str = json.dumps(RespuestaAnalisis.model_json_schema(), indent=2)
 
-    # El prompt definido previamente
     SYSTEM_PROMPT_TEXT = f"""
     Eres un motor de extracción de datos para RRHH. Tu entrada será el NOMBRE DEL ARCHIVO y el TEXTO CRUDO extraído de un documento.
     Tu objetivo es CLASIFICAR el documento y ESTRUCTURAR la información en JSON estricto.
@@ -129,21 +127,17 @@ def analyze_document_content(content: str, filename: str, is_image_mode: bool = 
         ]
 
     try:
-        # Usamos gpt-4o-mini por su capacidad de visión y manejo de JSON
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            # 💡 CLAVE: Forzamos la salida JSON usando el schema Pydantic
             response_format={
                 "type": "json_object",
-                # "schema": RespuestaAnalisis.model_json_schema()
             }
         )
         
-        # Extraemos el texto JSON de la respuesta
         raw_json = response.choices[0].message.content
         print(" -> Respuesta cruda de la IA recibida.")
         print( raw_json)
@@ -153,12 +147,11 @@ def analyze_document_content(content: str, filename: str, is_image_mode: bool = 
 
         validated_data = RespuestaAnalisis.model_validate(data)
         
-        return validated_data.model_dump() # Retornamos diccionario puro
+        return validated_data.model_dump() 
 
     except ValidationError as e:
         print(f"Error de validación Pydantic: La IA generó un JSON inválido. Detalles: {e}")
         return 
     except Exception as e:
-        # Aquí puedes manejar errores de la API (ej. clave inválida, archivo muy grande)
         print(f"Error en la llamada a la API de OpenAI: {e}")
         return 
