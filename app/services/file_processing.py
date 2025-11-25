@@ -6,10 +6,34 @@ from typing import Optional
 # Librerías de la Etapa B
 from PIL import Image
 from pdf2image import convert_from_path, exceptions as pdf_exceptions
+from PIL.Image import Resampling
+from PIL import ImageEnhance
 
 # --------------------------------------------------------------------------
 # 1. FUNCIONES AUXILIARES
 # --------------------------------------------------------------------------
+def _optimize_image(img: Image.Image) -> Image.Image:
+    """
+    Aplica redimensionamiento y filtros de pre-procesamiento (contraste, grises) 
+    para mejorar la precisión del OCR del LLM, especialmente en documentos de identidad.
+    """
+    # --- 1. Redimensionamiento ---
+    # --- 2. Filtros Anti-Alucinación (Solo para Vision Mode) ---
+    
+    # 2.1 Convertir a escala de grises: Elimina el ruido de color/fondo de los Carnets.
+    # Usamos convert('RGB') primero por si venía en otro modo (P)
+    img = img.convert("RGB").convert("L") 
+    
+    # 2.2 Aumentar Contraste: Hace que el texto negro resalte sobre el fondo claro.
+    # 1.8 significa 80% más de contraste.
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(1.3) 
+
+    # 2.3 Aumentar Nitidez: Agudiza los bordes de los números.
+    enhancer = ImageEnhance.Sharpness(img)
+    img = enhancer.enhance(1.05) # 30% más de nitidez
+
+    return img
 
 def _convert_pil_to_base64(img: Image.Image) -> str:
     """Convierte un objeto de imagen PIL a una cadena Base64."""
@@ -34,10 +58,14 @@ def _process_pdf_file(file_path: str) -> Optional[str]:
     try:
         # Convertimos solo la primera página (first_page=1, last_page=1)
         # Esto reduce el tiempo y el costo de la API.
-        images = convert_from_path(file_path, first_page=1, last_page=1, dpi=200)
+        
+        images = convert_from_path(file_path, first_page=1, last_page=2, dpi=200)
         if images:
+            optimized_img = _optimize_image(images[0])
+            optimized_img.save("debug_optimized_image.jpeg") # Opcional: usa una ruta absoluta si /tmp no existe
+            print("-> DEBUG: Imagen optimizada guardada como debug_optimized_image.jpeg")
             # Usamos la función auxiliar para codificar la imagen
-            return _convert_pil_to_base64(images[0])
+            return _convert_pil_to_base64(optimized_img)
         return None
     except pdf_exceptions.PDFPageCountError:
         print("Error: El archivo PDF está vacío.")
@@ -51,7 +79,10 @@ def _process_image_file(file_path: str) -> Optional[str]:
     print(f"  -> Procesando Imagen: {file_path}")
     try:
         img = Image.open(file_path)
-        return _convert_pil_to_base64(img)
+        optimized_img = _optimize_image(img)
+        optimized_img.save("debug_optimized_image.jpeg") # Opcional: usa una ruta absoluta si /tmp no existe
+        print("-> DEBUG: Imagen optimizada guardada como debug_optimized_image.jpeg")
+        return _convert_pil_to_base64(optimized_img)
     except Exception as e:
         print(f"Error al abrir o codificar la imagen: {e}")
         return None
