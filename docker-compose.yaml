@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  api-datec:
+    build: .
+    container_name: datec_idp_container
+    ports:
+      - "8080:8080"
+    # Esto es la magia: lee tu archivo .env local y pasa las claves al contenedor
+    env_file:
+      - .env
+    environment:
+      - PORT=8080
+    volumes:
+      # Esto permite que si cambias código en tu PC, se actualice en el contenedor sin reconstruir (opcional)
+      - .:/app
+      

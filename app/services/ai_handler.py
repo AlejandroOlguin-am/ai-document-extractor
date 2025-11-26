@@ -10,11 +10,7 @@ from app.models.schemas import RespuestaAnalisis
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 def analyze_document_content(content: str, filename: str, is_image_mode: bool = False) -> dict:
-    """
-    Analiza el documento. 
-    - Si is_image_mode=True, 'content' es Base64.
-    - Si is_image_mode=False, 'content' es Texto plano.
-    """
+ 
     print(f"  -> Llamando al Agente IA (Modo: {'VISION' if is_image_mode else 'TEXTO'})...")
 
     schema_str = json.dumps(RespuestaAnalisis.model_json_schema(), indent=2)
@@ -108,6 +104,7 @@ def analyze_document_content(content: str, filename: str, is_image_mode: bool = 
     Responde ÚNICAMENTE con el siguiente JSON válido (sin markdown):
     {schema_str}
     """
+    
     user_content = []
     if is_image_mode:
         system_prompt = SYSTEM_PROMPT_VISION
@@ -139,7 +136,8 @@ def analyze_document_content(content: str, filename: str, is_image_mode: bool = 
         )
         
         raw_json = response.choices[0].message.content
-        print(" -> Respuesta cruda de la IA recibida.")
+        
+        print(" -> Respuesta de la IA recibida.")
 
         data = json.loads(raw_json)
 

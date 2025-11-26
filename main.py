@@ -13,15 +13,15 @@ from app.services.text_extraction import extract_text_from_pdf # Importar el nue
 
 app = FastAPI(
     title="DATEC AI Document Analyzer",
-    description="API para clasificar, extraer y resumir documentos (CV/CI) usando modelos GPT-5 de DATEC.",
-    version="1.0.0"
+    description="API para clasificar, extraer y resumir documentos (CV/CI) usando el modelo gpt-5-mini.",
+    version="1.0.1"
 )
 @app.post("/analyze", response_model=Dict[str, Any])
 async def analyze_document_endpoint(
     document: UploadFile = File(..., description="Archivo a analizar (PDF, JPG, o PNG).")
 ):
     """
-    Recibe un documento y devuelve el análisis JSON de la IA.
+    Recibe un documento y devuelve el análisis y la información obtenida en un JSON.
     """
     file_name = document.filename
     
@@ -36,7 +36,7 @@ async def analyze_document_endpoint(
         ai_response = None
         
         if file_name.lower().endswith('.pdf'):
-            print("-> Detectado PDF. Intentando extracción de texto rápida...")
+            print("-> PDF Detectado. Intentando extracción de texto rápida...")
             text_content = extract_text_from_pdf(temp_file_path)
             
             if text_content:
